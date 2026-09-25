@@ -46,6 +46,7 @@ struct ContentView: View {
                     Label(error, systemImage: "exclamationmark.triangle")
                         .font(.caption).foregroundStyle(.red)
                 }
+                progressCard
                 Spacer()
             }
             .padding(36)
@@ -130,6 +131,29 @@ struct ContentView: View {
                 Spacer(minLength: 0)
             }
         }
+    }
+
+    private var progressCard: some View {
+        HStack(spacing: 18) {
+            ZStack {
+                Circle().stroke(accent.opacity(0.12), lineWidth: 5)
+                Circle().trim(from: 0, to: store.items.isEmpty ? 0 : CGFloat(completedCount) / CGFloat(store.items.count))
+                    .stroke(accent, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Image(systemName: "checkmark").font(.system(size: 18, weight: .semibold)).foregroundStyle(accent)
+            }.frame(width: 48, height: 48)
+            VStack(alignment: .leading, spacing: 5) {
+                Text(store.items.isEmpty ? "Yeni bir başlangıç" : "İlerleme kaydediyorsun")
+                    .font(.system(size: 14, weight: .semibold))
+                Text(store.items.isEmpty ? "İlk görevini ekle, gerisini adım adım hallet." : "\(store.items.count) görevden \(completedCount) tanesi tamamlandı.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Text(store.items.isEmpty ? "0%" : "\(completedCount * 100 / store.items.count)%")
+                .font(.system(size: 24, weight: .semibold, design: .rounded)).foregroundStyle(accent)
+        }
+        .padding(20)
+        .background(accent.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
     }
 
     private func matches(_ item: TodoItem, filter: TaskFilter) -> Bool {
