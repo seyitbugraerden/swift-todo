@@ -47,6 +47,7 @@ struct ContentView: View {
                         .font(.caption).foregroundStyle(.red)
                 }
                 progressCard
+                composer
                 Spacer()
             }
             .padding(36)
@@ -156,12 +157,42 @@ struct ContentView: View {
         .background(accent.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
     }
 
+    private var composer: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "plus.circle").font(.title3).foregroundStyle(accent)
+            TextField("Aklında ne var? Yeni bir görev ekle…", text: $newTitle)
+                .textFieldStyle(.plain).focused($composerFocused).onSubmit(addTask)
+                .accessibilityLabel("Yeni görev")
+            Button(action: addTask) {
+                Image(systemName: "arrow.up").fontWeight(.semibold).padding(5)
+            }
+            .buttonStyle(.borderedProminent).clipShape(RoundedRectangle(cornerRadius: 8))
+            .disabled(newTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityLabel("Görev ekle").help("Görev ekle (Return)")
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 12).strokeBorder(composerFocused ? accent : Color.primary.opacity(0.12), lineWidth: 1))
+        .background {
+            Button("Yeni görev") { composerFocused = true }
+                .keyboardShortcut("n", modifiers: .command).hidden()
+        }
+    }
+
     private func matches(_ item: TodoItem, filter: TaskFilter) -> Bool {
         switch filter {
         case .all: true
         case .important: item.isImportant && !item.isCompleted
         case .completed: item.isCompleted
         }
+    }
+
+    private func addTask() {
+        store.add(newTitle, important: filter == .important)
+        guard store.storageError == nil else { return }
+        newTitle = ""
+        if filter == .completed { filter = .all }
+        search = ""
+        composerFocused = true
     }
 
 
