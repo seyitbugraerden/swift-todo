@@ -48,7 +48,7 @@ struct ContentView: View {
                 }
                 progressCard
                 composer
-                Spacer()
+                taskList
             }
             .padding(36)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -56,7 +56,24 @@ struct ContentView: View {
         }
         .tint(accent)
         .frame(minWidth: 800, minHeight: 580)
-
+        .sheet(item: $editingItem) { item in
+            VStack(alignment: .leading, spacing: 20) {
+                Text("Görevi düzenle").font(.title2.bold())
+                TextField("Görev adı", text: $editedTitle)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { saveEdit(item) }
+                HStack {
+                    Spacer()
+                    Button("Vazgeç") { editingItem = nil }.keyboardShortcut(.cancelAction)
+                    Button("Kaydet") { saveEdit(item) }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(editedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .keyboardShortcut(.defaultAction)
+                }
+            }
+            .padding(28)
+            .frame(width: 400)
+        }
     }
 
     private var sidebar: some View {
@@ -178,6 +195,69 @@ struct ContentView: View {
         }
     }
 
+    private var taskList: some View {
+        VStack(spacing: 14) {
+            HStack {
+                Text("GÖREVLER · \(visibleItems.count)")
+                    .font(.system(size: 10, weight: .semibold)).tracking(1.3).foregroundStyle(.secondary)
+                Spacer()
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                    TextField("Görev ara", text: $search).textFieldStyle(.plain)
+                        .accessibilityLabel("Görev ara")
+                    if !search.isEmpty {
+                        Button { search = "" } label: { Image(systemName: "xmark.circle.fill") }
+                            .buttonStyle(.plain).accessibilityLabel("Aramayı temizle")
+                    }
+                }.font(.caption).frame(width: 160)
+            }
+            if visibleItems.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: search.isEmpty ? "tray" : "magnifyingglass")
+                        .font(.system(size: 32, weight: .light)).foregroundStyle(accent.opacity(0.7))
+                    Text(search.isEmpty ? "Burada henüz görev yok" : "Görev bulunamadı")
+                        .font(.headline)
+                    Text(search.isEmpty ? "Yeni bir görev ekle veya başka bir listeye göz at." : "Başka bir kelimeyle aramayı dene.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }.frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 8) {
+                        ForEach(visibleItems) { item in taskRow(item) }
+                    }.padding(.vertical, 2)
+                }
+            }
+        }.frame(maxHeight: .infinity)
+    }
+
+    private func taskRow(_ item: TodoItem) -> some View {
+        HStack(spacing: 13) {
+            Button { withAnimation { store.toggleCompletion(item) } } label: {
+                Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22, weight: .light))
+                    .foregroundStyle(item.isCompleted ? accent : Color.secondary.opacity(0.6))
+            }.buttonStyle(.plain)
+                .accessibilityLabel(item.isCompleted ? "Görevi yeniden aç" : "Görevi tamamla")
+            Text(item.title).font(.system(size: 14))
+                .strikethrough(item.isCompleted)
+                .foregroundStyle(item.isCompleted ? .secondary : .primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+            Button { store.toggleImportance(item) } label: {
+                Image(systemName: item.isImportant ? "star.fill" : "star")
+                    .foregroundStyle(item.isImportant ? Color.orange : Color.secondary.opacity(0.55))
+            }.buttonStyle(.plain).accessibilityLabel(item.isImportant ? "Önemli işaretini kaldır" : "Önemli olarak işaretle")
+            Menu {
+                Button("Düzenle", systemImage: "pencil") { editedTitle = item.title; editingItem = item }
+                Button("Sil", systemImage: "trash", role: .destructive) { withAnimation { store.delete(item) } }
+            } label: { Image(systemName: "ellipsis").foregroundStyle(.secondary) }
+                .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                .accessibilityLabel("Görev seçenekleri")
+        }
+        .padding(16)
+        .background(Color.primary.opacity(item.isCompleted ? 0.015 : 0.035), in: RoundedRectangle(cornerRadius: 12))
+    }
+
     private func matches(_ item: TodoItem, filter: TaskFilter) -> Bool {
         switch filter {
         case .all: true
@@ -195,7 +275,10 @@ struct ContentView: View {
         composerFocused = true
     }
 
-
+    private func saveEdit(_ item: TodoItem) {
+        store.rename(item, to: editedTitle)
+        if store.storageError == nil { editingItem = nil }
+    }
 }
 
 #Preview {
