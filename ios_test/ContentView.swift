@@ -49,6 +49,7 @@ struct ContentView: View {
                 progressCard
                 composer
                 taskList
+                footer
             }
             .padding(36)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -256,6 +257,15 @@ struct ContentView: View {
         }
         .padding(16)
         .background(Color.primary.opacity(item.isCompleted ? 0.015 : 0.035), in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var footer: some View {
+        HStack {
+            Circle().fill(Color.green).frame(width: 5, height: 5)
+            Text("\(store.items.count - completedCount) görev seni bekliyor")
+            Spacer()
+            Text("Yeni görev  ⌘N")
+        }.font(.system(size: 10)).foregroundStyle(.secondary)
     }
 
     private func matches(_ item: TodoItem, filter: TaskFilter) -> Bool {
