@@ -38,6 +38,8 @@ struct ContentView: View {
 
     var body: some View {
         HStack(spacing: 0) {
+            sidebar
+            Divider()
             VStack(alignment: .leading, spacing: 26) {
                 if let error = store.storageError {
                     Label(error, systemImage: "exclamationmark.triangle")
@@ -52,6 +54,63 @@ struct ContentView: View {
         .tint(accent)
         .frame(minWidth: 800, minHeight: 580)
 
+    }
+
+    private var sidebar: some View {
+        VStack(alignment: .leading, spacing: 32) {
+            HStack(spacing: 12) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 40, height: 40)
+                    .background(accent.gradient, in: RoundedRectangle(cornerRadius: 13))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("odak").font(.system(size: 24, weight: .bold, design: .rounded))
+                    Text("Daha az karmaşa.").font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("ÇALIŞMA ALANIM")
+                    .font(.system(size: 10, weight: .semibold)).tracking(1.6)
+                    .foregroundStyle(.secondary).padding(.horizontal, 12).padding(.bottom, 6)
+                ForEach(TaskFilter.allCases) { option in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.18)) { filter = option }
+                    } label: {
+                        HStack(spacing: 11) {
+                            Image(systemName: option.icon).frame(width: 18)
+                            Text(option.rawValue).fontWeight(filter == option ? .semibold : .regular)
+                            Spacer()
+                            Text("\(store.items.filter { matches($0, filter: option) }.count)")
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(12)
+                        .foregroundStyle(filter == option ? accent : Color.primary)
+                        .background(filter == option ? accent.opacity(0.11) : .clear, in: RoundedRectangle(cornerRadius: 10))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            Spacer()
+            VStack(alignment: .leading, spacing: 9) {
+                Image(systemName: "leaf").font(.title3).foregroundStyle(accent)
+                Text("Küçük adımlar,\nbüyük değişimler.")
+                    .font(.system(size: 15, weight: .medium)).lineSpacing(4)
+                Text("Bugün bir şeyle başla.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(accent.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+            Label("Sadece bu Mac’te saklanır", systemImage: "lock.shield")
+                .font(.system(size: 10)).foregroundStyle(.secondary)
+        }
+        .padding(22)
+        .frame(width: 226)
+        .frame(maxHeight: .infinity)
+        .background(.thinMaterial)
     }
 
     private func matches(_ item: TodoItem, filter: TaskFilter) -> Bool {
