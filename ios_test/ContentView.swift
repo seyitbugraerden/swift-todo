@@ -41,6 +41,7 @@ struct ContentView: View {
             sidebar
             Divider()
             VStack(alignment: .leading, spacing: 26) {
+                header
                 if let error = store.storageError {
                     Label(error, systemImage: "exclamationmark.triangle")
                         .font(.caption).foregroundStyle(.red)
@@ -111,6 +112,24 @@ struct ContentView: View {
         .frame(width: 226)
         .frame(maxHeight: .infinity)
         .background(.thinMaterial)
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack {
+                Text(Date.now.formatted(Date.FormatStyle().day().month(.wide).weekday(.wide).locale(Locale(identifier: "tr_TR"))).uppercased())
+                    .font(.system(size: 10, weight: .semibold)).tracking(1.5).foregroundStyle(.secondary)
+                Spacer()
+                Image(systemName: "sun.max").foregroundStyle(accent)
+            }
+            HStack(alignment: .bottom) {
+                VStack(alignment: .leading, spacing: 7) {
+                    Text(filter.rawValue).font(.system(size: 32, weight: .bold, design: .rounded))
+                    Text(filter.subtitle).font(.subheadline).foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+        }
     }
 
     private func matches(_ item: TodoItem, filter: TaskFilter) -> Bool {
