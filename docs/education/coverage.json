@@ -1,0 +1,43 @@
+{
+  "title": "Odak — Satır Satır Geliştirici Rehberi",
+  "snapshot_date": "2026-09-25",
+  "files": [
+    {
+      "path": "ios_test/ios_testApp.swift",
+      "lines": 29,
+      "sha256": "824e9c4ea9cc7debb94fff7500f59ac9d02ee2f472ab1ed0bc0efca9897b47b5",
+      "semantic_lines": 19
+    },
+    {
+      "path": "ios_test/TaskStore.swift",
+      "lines": 74,
+      "sha256": "f266990028a4aed86c771ad1e245630ad6bb25bb3b1c3ad2f059f6e731fda421",
+      "semantic_lines": 51
+    },
+    {
+      "path": "ios_test/ContentView.swift",
+      "lines": 298,
+      "sha256": "5ec6f43265cbba8b7e6dee2982a106dda1b5201a790b0f7b6ad738a991c0c889",
+      "semantic_lines": 235
+    },
+    {
+      "path": "ios_testTests/ios_testTests.swift",
+      "lines": 37,
+      "sha256": "7e6a1a53373fb1e546c416884d7f3aecf4fb07a33c3592aaad18857eb477ecab",
+      "semantic_lines": 32
+    },
+    {
+      "path": "ios_testUITests/ios_testUITests.swift",
+      "lines": 43,
+      "sha256": "7189fa927b1e753179b1e283d8381680934d51da9eb77a9aca03bbde67365bac",
+      "semantic_lines": 14
+    },
+    {
+      "path": "ios_testUITests/ios_testUITestsLaunchTests.swift",
+      "lines": 33,
+      "sha256": "ac6389e0b74c40b4fe8e4f9d04c8c28080a9fa41877762f3e90d9b0119f8cfe7",
+      "semantic_lines": 14
+    }
+  ],
+  "total_lines": 514
+}

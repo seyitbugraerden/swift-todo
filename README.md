@@ -79,6 +79,8 @@ Uygulamada bulut senkronizasyonu yoktur. Yedek almak için uygulamayı kapattık
 
 ## Proje yapısı
 
+Projeyi kod üzerinden öğrenmek için [Satır Satır Geliştirici Rehberi (PDF)](docs/odak-gelistirici-rehberi.pdf) belgesini inceleyebilirsin. Rehber; altı Swift dosyasındaki 514 satırı, SwiftUI yerleşimlerini, veri akışını ve testleri açıklamalarıyla ele alır. [Markdown sürümü](docs/odak-gelistirici-rehberi.md) de mevcuttur.
+
 ```text
 ios_test/
 ├── ios_testApp.swift       # Uygulama başlangıcı ve pencere yapılandırması

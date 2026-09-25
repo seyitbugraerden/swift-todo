@@ -1,0 +1,4 @@
+reportlab==5.0.1
+pypdf==6.19.0
+pillow==12.3.0
+PyMuPDF==1.28.2

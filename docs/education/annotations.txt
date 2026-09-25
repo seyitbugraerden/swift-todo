@@ -1,0 +1,371 @@
+@@ ios_test/ios_testApp.swift
+1|SwiftUI modülünü içe aktarır. App, Scene, WindowGroup ve özellik sarmalayıcıları bu çatıdan gelir; uygulamanın bildirimsel arayüz girişini yazabilmek için gerekir.
+2|AppKit, macOS’un yerel uygulama ve pencere API’lerini sağlar. Burada NSApplication, NSImage ve uygulama delegesi için kullanılır; bu bağımlılık kodun doğrudan iOS’ta çalışmamasının nedenlerinden biridir.
+4|NSObject’tan türeyen ve NSApplicationDelegate protokolüne uyan bir referans türü tanımlar. final, alt sınıf oluşturulmasını kapatır. SwiftUI yaşam döngüsüne macOS’a özgü bir açılış davranışı eklemek için küçük bir köprü görevi görür.
+5|macOS, uygulama açılışı tamamlandığında bu delege metodunu çağırır. Notification parametresi protokol imzasının parçasıdır; gövdede kullanılmaz.
+8|Bundle.main içinden AppIcon.icns dosyasının URL’sini arar. guard let, bulunamayan kaynağın optional sonucunu güvenli biçimde ele alır; dosya adı asset kataloğundaki AppIcon ile ilişkilidir.
+9|URL’deki dosyayı NSImage olarak yükler. URL ya da görüntü üretilemezse return ile sessizce çıkar; simge yenileme hatası uygulamanın açılışını engellemez.
+10|Çalışan uygulamanın Dock simgesini yüklenen görselle günceller. Kaynak yorumuna göre amaç, Launch Services’in önceki geliştirme derlemesinden tuttuğu geçici simgeyi yenilemektir; kalıcı bir önbellek temizleme işlemi değildir.
+14|@main bu tipi programın giriş noktası yapar. SwiftUI, App protokolü üzerinden uygulama yaşam döngüsünü başlatır; ayrıca elle bir main() yazılmaz.
+15|ios_testApp, SwiftUI App protokolüne uyar. Tipin adı teknik hedef adıdır; kullanıcıya görünen pencere adı aşağıda Odak olarak belirlenir.
+16|NSApplicationDelegateAdaptor, SwiftUI yaşam döngüsüne OdakAppDelegate örneğini bağlar. Böylece delegenin açılış metodu gerçekten çağrılır; sınıfı yalnızca tanımlamak yeterli olmazdı.
+17|TaskStore’un sahibi uygulamadır. @StateObject aynı uygulama kimliği boyunca nesnenin yaşamını SwiftUI’ya yönettirir; body yeniden hesaplanırken her seferinde yeni depo oluşturulmaz. Pencereler bu ortak nesneyi kullanır.
+19|body, gösterilecek sahneleri tarif eder. some Scene, somut dönüş tipini gizler ama derleyicinin tip bilgisini korur; burada View yerine Scene kullanılır çünkü uygulama düzeyinde pencere tanımlanır.
+20|Odak başlıklı bir WindowGroup oluşturur. macOS pencere yaşam döngüsünü SwiftUI yönetir; grup birden fazla pencere açılmasına da uygun bir sahne türüdür.
+21|Ana arayüzün kök görünümünü oluşturur. ContentView, kendi kalıcı deposunu burada üretmez; bir sonraki satırda dışarıdan sağlanır.
+22|store nesnesini görünüm ağacının environment alanına koyar. ContentView içindeki @EnvironmentObject bu aynı örneği bulur; bu bağlantı kaldırılırsa görünümün depo bağımlılığı karşılanmaz.
+23|Locale environment değerini tr_TR yapar. Yerelleştirmeye duyarlı alt görünümler Türkçe yerel ayarını kullanabilir; bu satır tek başına bütün metinleri otomatik çevirmez, metinler zaten Türkçe yazılmıştır.
+25|Yeni pencerenin başlangıç boyutunu 1000 × 740 punto önerir. Bu bir sabit boyut kilidi değildir; kullanıcı pencereyi büyütüp küçültebilir.
+26|Başlık çubuğunu gizleyen pencere stilini seçer. Daha sade bir içerik alanı sağlar; uygulamanın bütün pencere davranışlarını ortadan kaldırmaz.
+27|Pencerenin küçültülebileceği alt sınırı içeriğin minimum boyutuna bağlar. ContentView’deki 800 × 580 minimum frame ile birlikte çalışır.
+@@ ios_test/TaskStore.swift
+1|SwiftUI içe aktarılır. ObservableObject ve @Published ile SwiftUI’nın kullandığı gözlemlenebilir veri modeli kurulur. Foundation tipleri de bu modülün aktardığı API’ler üzerinden erişilebilir durumdadır.
+3|TodoItem bir değer türüdür. Identifiable, liste satırlarını id ile ayırt eder; Codable, JSON kodlama ve çözümlemeyi sentezler; Equatable, alan değerleri üzerinden eşitlik karşılaştırmasını mümkün kılar. Bu protokoller farklı sorumluluklar taşır.
+4|Her yeni göreve UUID kimliği verir. Başlığı aynı olan iki görev ayrı kalır; JSON’a yazılan kimlik yeniden yüklenince korunur. Satır kimliği için dizi indeksini kullanmamak sıralama ve silme sırasında yararlıdır.
+5|Görev başlığını zorunlu String olarak saklar. Varsayılanı olmadığı için yeni TodoItem oluşturulurken title verilmelidir; boş olup olmadığı model alanında değil TaskStore işlemlerinde doğrulanır.
+6|Yeni görev tamamlanmamış başlar. Bool, iki durumlu bilgiyi tutar; tamamlandı işareti değiştiğinde başlığın çizilmesi ve filtreler bu alanı okur.
+7|Yeni görev varsayılan olarak önemli değildir. Oluşturucuya isImportant verilerek bu varsayılan değiştirilebilir; Önemli filtresinden ekleme bunu kullanır.
+8|Oluşturulma zamanını kaydeder. Mevcut arayüz bu alanı göstermez veya sıralamada kullanmaz; alan Codable nedeniyle yine de JSON içinde yer alır.
+11|TaskStore’u MainActor’a izole eder. Arayüzün gözlemlediği duruma erişimi aynı aktörde toplar; bu, dosya işlemlerini arka plana taşımaz. Mevcut senkron okuma ve yazma ana aktörü meşgul edebilir.
+12|final class, paylaşılan kimliği olan ve miras alınmayan bir nesne tanımlar. ObservableObject ile değişiklikler SwiftUI tarafından izlenebilir. struct TodoItem veriyi, class TaskStore ise değişen ortak durumu yönetir.
+13|Görev dizisi başlangıçta boştur. @Published değişiklik bildirimi üretir; private(set) dış kodun diziyi okuyup doğrudan değiştirememesini sağlar. Böylece değişikliklerin dosyaya kayıt yolundan geçmesi teşvik edilir.
+14|İsteğe bağlı hata metnidir; başlangıçta nil olur. @Published sayesinde hata oluştuğunda arayüz mesajı güncellenir. Setter private değildir; mevcut UI bu alanı temizlemez.
+15|Depolama konumunu değişmez ve sınıfa özel URL olarak tutar. Dosya yolunun tek yerde tutulması tüm işlemlerin aynı dosyaya gitmesini sağlar.
+17|Kurucu isteğe bağlı bir dosya URL’si kabul eder. Üretimde varsayılan yol, testlerde geçici yol kullanılır. Bu, bağımlılık enjeksiyonunun basit bir örneğidir ve gerçek kullanıcı verisini testlerden ayırır.
+18|?? operatörü, verilen URL nil ise Application Support dizinini seçer. self.fileURL nesnenin alanını, sağdaki fileURL ise kurucu parametresini ifade eder.
+19|Uygulamaya özgü Odak alt dizinini ekler. isDirectory, URL’nin dizin olarak ele alınacağını belirtir; burada henüz disk üzerinde dizin oluşturulmaz.
+20|Görev dosyası adını yola ekler. Sonuç varsayılan olarak kullanıcının Application Support/Odak/tasks.json konumudur.
+21|Dosya yoksa kurucudan çıkar ve boş listeyle devam eder. İlk açılışta veri olmaması normal kabul edilir; okuma hatası olarak gösterilmez.
+22|Hata fırlatabilen okuma ve çözümleme işlemlerini do bloğunda toplar. Bir hata oluşursa aşağıdaki catch çalışır.
+23|Data(contentsOf:) dosyayı senkron okur; JSONDecoder baytları [TodoItem] dizisine çevirir. .self, dizi tipinin kendisini argüman olarak verir. try hem dosya okuma hem çözümleme hatasının catch’e gitmesini sağlar.
+24|Okuma ya da JSON çözümleme başarısız olduğunda bu kola geçilir. Hata kullanıcıya sade bir mesajla aktarılır; özgün Error ayrıntısı saklanmaz.
+25|Yükleme hatasını yayımlar. update metodu storageError nil değilken yazmayı reddettiği için boş listenin bozuk dosyanın üzerine yazılması engellenir. Yeniden başlatma, kalıcı olarak bozuk JSON’u kendiliğinden onarmaz.
+29|Yeni görev ekleme API’sidir. İlk parametredeki _, çağrıyı add("Başlık") biçiminde okunur yapar; important için varsayılan false olduğundan normal görevde ikinci argüman gerekmez.
+30|Başlığın başındaki ve sonundaki boşlukları ve satır sonlarını temizler. Ortadaki boşlukları silmez. Parametreyle aynı adlı yerel let, temizlenmiş değeri bundan sonra kullanır.
+31|Temizlenmiş metin boşsa işlemi erken bitirir. Kontrolün depoda bulunması, arayüz dışından yapılan eklemelerde de kuralın uygulanmasını sağlar.
+32|update’e bir closure verir; $0 değiştirilebilir görev dizisidir. Yeni TodoItem sıfırıncı konuma eklenir, bu yüzden yeni görevler listenin başına gelir. Kaydetme ayrıntısı tek ortak metoda bırakılır.
+35|Verilen görevin tamamlanma durumunu tersine çevirecek işlemi tanımlar. Parametre değer kopyası olsa bile güncel kayıt aşağıda kimlik üzerinden bulunur.
+36|update’in sağladığı değiştirilebilir diziye items adı verir. Buradaki items closure parametresidir; doğrudan yayımlanan alanın üzerine yazılmaz.
+37|UUID eşleşmesiyle güncel dizindeki indeksi bulur. Bulunamazsa yalnızca bu closure’dan çıkar; update dış fonksiyonu devam edip değişmemiş diziyi yine kaydedebilir.
+38|Bool.toggle(), false değerini true veya true değerini false yapar. Yeni görev üretmek yerine mevcut kimlik korunur.
+42|Önemli işaretini değiştirmek için ayrı bir API sunar. UI, dosya formatını bilmeden bu davranışı çağırabilir.
+43|Değişikliği ortak update yoluna iletir. Böylece önemli işareti de diğer işlemlerle aynı kayıt ve hata politikasını kullanır.
+44|Görevin başlığına değil id değerine bakarak indeksi bulur. Başlık değişse bile görev tanınır; bulunamama closure düzeyinde erken çıkıştır.
+45|isImportant alanını tersine çevirir. Tamamlanma alanına dokunulmaz; tamamlanan bir görev önemli işaretini veri modelinde koruyabilir.
+49|Görev başlığını değiştiren API’dir. to dış parametre etiketi rename(item, to: "Yeni") çağrısını okunur kılar; iç değişkenin adı title’dır.
+50|Yeni başlığın çevresindeki boşlukları temizler. Ekleme ve yeniden adlandırmada aynı metin kuralı uygulanır.
+51|Boş başlıkla yeniden adlandırmayı reddeder. Geçerli eski başlık korunur; bu durumda bir storageError üretilmez.
+52|Başlık değişimini kayıt işlemini yöneten closure’a taşır. Aynı dosya yazma kodu her metoda kopyalanmaz.
+53|Güncel görevi kimliğinden bulur. Düzenleme ekranındaki TodoItem eski bir değer kopyası olsa bile doğru kayıt güncellenebilir.
+54|Yalnızca title alanını değiştirir; id, tarih ve durum işaretleri korunur.
+58|Görevi silen API’yi tanımlar. Dışarıdan TodoItem alınır; silme ölçütü bu öğenin kimliğidir.
+59|Dış $0 görev dizisi, iç $0 ise removeAll koşulunun incelediği tek görevdir. Kimliği eşleşen kayıtlar çıkarılır. Aynı sembolün iç içe closure’larda farklı değerleri temsil ettiğine dikkat et.
+62|Ortak güncelleme mekanizmasıdır. mutation bir fonksiyon parametresidir; inout, closure’ın verilen dizi üzerinde değişiklik yapabilmesini sağlar. Void, closure’ın ayrıca sonuç değeri döndürmediğini belirtir.
+63|Depolama hatası varsa tüm değişiklikleri engeller. Hem okuma hem yazma hatasından sonra geçerlidir; mevcut uygulamada otomatik yeniden deneme veya hata sıfırlama akışı yoktur.
+64|Mevcut dizinin değiştirilebilir değer kopyasını hazırlar. Swift dizileri copy-on-write kullanabilir; burada mantıksal amaç, kayıt başarılı olana kadar yayımlanan items değerini korumaktır.
+65|Closure’ı kopya üzerinde çalıştırır. & işareti, updated değişkeninin inout parametreye verildiğini gösterir.
+66|Dizin oluşturma ve dosya yazma işlemleri hata fırlatabildiği için do/catch kapsamına alınır.
+67|Dosya adını çıkarıp üst dizini oluşturur. withIntermediateDirectories: true, eksik ara dizinlerin de oluşturulmasını ister. Var olan dizin için yeniden kurulum gerekmez.
+68|JSONEncoder diziyi JSON baytlarına çevirir; .atomic ile önce yardımcı dosyaya yazılıp hedefin değiştirilmesi istenir. Bu, yarım dosya riskini azaltır; şifreleme, yedekleme veya çok süreçli işlem kilidi değildir.
+69|Dosyaya yazma başarılı olduktan sonra yayımlanan listeyi günceller. Kullanıcının gördüğü veri ile son başarılı kayıt aynı değişikliği temsil eder.
+70|Dizin veya kayıt hatasını yakalar. items ataması bu noktaya gelmeden yapılmadığı için ekrandaki eski liste korunur.
+71|Yazma hatasını kullanıcıya duyurur. Mesaj yeniden denemeyi önerse de mevcut guard yüzünden aynı store örneğinde hata temizlenmeden yeni değişiklik yapılamaz; bu bir geliştirme noktasıdır.
+@@ ios_test/ContentView.swift
+1|SwiftUI görünüm tiplerini, yerleşim kaplarını ve durum sarmalayıcılarını kullanılabilir yapar. Dosyanın temel görevi arayüzü ve arayüze özgü geçici davranışları tarif etmektir.
+3|Dosya kapsamındaki private enum, üç filtreyi sınırlı bir tür olarak tanımlar. String, görünen başlıkları rawValue yapar; CaseIterable tüm seçenekleri dolaştırır; Identifiable ForEach için kimlik sağlar.
+4|Üç olası filtreyi ve Türkçe ham metinlerini tanımlar. Serbest metin yerine enum kullanmak yazım hatalı filtre değerlerini engeller; tüm durumlar switch içinde derleyici tarafından denetlenebilir.
+5|Kimlik olarak enum değerinin kendisini döndürür. Self mevcut tiptir; self mevcut değerdir. Üç durum birbirinden farklı olduğu için ayrıca UUID gerekmez.
+6|Filtrenin SF Symbols simge adını üreten hesaplanan özelliktir. Ayrı bir saklanan alan tutulmadığı için simge ile filtre arasında tutarsızlık oluşmaz.
+7|Mevcut enum değerine göre simge seçer. Bu switch bir ifade olarak String sonucu üretir; her case içinde ayrı return yazılmaz.
+8|Tüm görevler için katmanlı kare simgesinin adını döndürür. Dize bir dosya yolu değil, sistem simgesi adıdır.
+9|Önemli filtresinin simgesi yıldızdır. Aynı anlam görev satırındaki yıldızla da kullanılır.
+10|Tamamlananlar filtresinde onay işaretli daireyi kullanır. Switch tüm enum durumlarını kapsar; yeni case eklendiğinde buranın da güncellenmesi gerekir.
+13|Seçili filtrenin altında gösterilecek açıklamayı hesaplar. Başlık, simge ve açıklama aynı enum etrafında toplanmıştır.
+14|Filtre durumundan açıklama metnine geçişi yapar. if zinciri yerine enum üzerinde eksiksiz switch kullanılır.
+15|Tüm görevler ekranının alt başlığını döndürür.
+16|Önemli işler ekranına özgü açıklama döndürür; kullanıcıya listenin amacını anlatır.
+17|Tamamlanan işler ekranında ilerlemeyi vurgulayan metni döndürür.
+22|ContentView bir SwiftUI View değeridir. struct olması görünüm tanımını hafif bir değer olarak tutar; kalıcı durumun yaşamı property wrapper’lar tarafından yönetilir.
+23|Üst görünümün sağladığı TaskStore’u tipine göre environment içinden okur. private dış erişimi sınırlar. Bu alan yeni depo yaratmaz; environmentObject sağlanmazsa çalışma zamanı hatası oluşur.
+24|Seçili filtre yerel arayüz durumudur ve başlangıçta all’dır. @State değiştiğinde bu değere bağımlı görünüm yeniden değerlendirilir; filtre JSON’a kaydedilmez.
+25|Arama metnini yerel durumda tutar. Boş dize arama kısıtı olmaması anlamına gelir; kullanıcı yazdıkça görünür liste hesaplaması değişir.
+26|Yeni görev kutusunun taslak metnidir. Henüz TaskStore’a eklenmediği için yazılan her harf diske kaydedilmez.
+27|Düzenlenen görevi optional olarak tutar. nil, açık düzenleme sayfası olmadığı anlamına gelir; bir TodoItem atanınca sheet(item:) bu seçimle açılır.
+28|Düzenleme sayfasının metin taslağıdır. Ayrı state kullanmak, kullanıcı Vazgeç dediğinde asıl başlığın değişmemesini sağlar.
+29|Metin alanının klavye odağını izler ve değiştirebilir. @FocusState sıradan bir Bool’dan farklı olarak .focused bağlantısıyla gerçek odak sistemiyle eşleşir.
+30|Arayüzde tekrar kullanılan mor vurgu rengini tanımlar. Tek sabit kullanmak renk tutarlılığı sağlar; bu görünümde vurgu asset kataloğundan okunmaz.
+32|Tamamlanmış görevleri key path olan \.isCompleted üzerinden filtreleyip sayar. Sonuç ayrı state değildir; görevler değiştiğinde güncel diziden türetilir.
+33|Ekranda gösterilecek görev dizisini üreten hesaplanan özelliktir. Filtrelenmiş ayrı bir kopyayı state olarak tutmayarak senkron tutma yükünden kaçınılır.
+34|Depodaki her öğe için filtre closure’ını çalıştırır. item, sırayla incelenen TodoItem değeridir.
+35|Öğe hem seçili filtreye uymalı hem arama boş olmalı veya başlık aramayı içermelidir. && ve || kısa devre çalışır; localizedStandardContains kullanıcıya yönelik yerel ayarlı metin eşleştirmesi sağlar.
+36|Tamamlanmamış öğeleri tamamlanmışların önüne sıralar. $0 ve $1 karşılaştırılan iki görevdir. Kural başlık veya createdAt tarihine göre sıralama yapmaz; yalnızca tamamlanma durumuna bakar.
+39|View protokolünün arayüz tanımıdır. some View tek bir somut ama dışarıya gizli görünüm tipini ifade eder; herhangi bir tipin rastgele dönebilmesi anlamına gelmez.
+40|Ana HStack, kenar çubuğu ile içerik panelini yatay dizer. spacing: 0, paneller arasına otomatik boşluk eklenmesini engeller; ayırma işini Divider yapar. VStack kullanılsaydı paneller üst üste gelirdi.
+41|sidebar hesaplanan görünümünü ağaca ekler. Bu bölümlendirme body’yi okunur tutar; ayrı bir pencere ya da bağımsız veri deposu oluşturmaz.
+42|HStack içindeki Divider iki panel arasında dikey bir ayırıcı oluşturur. Yönü yerleşim bağlamıyla uyumludur.
+43|Ana paneldeki bölümleri yukarıdan aşağıya dizer. leading, içerikleri yatayda başlangıca hizalar; spacing: 26 komşu bölümler arasındaki mesafedir, dış kenar boşluğu değildir.
+44|Tarih, seçili filtre başlığı ve açıklamayı içeren header bölümünü ekler.
+45|Optional hata varsa güvenli biçimde error değişkenine açar. nil iken hata görünümü ağaca eklenmez; görünürlük için ayrı bir Bool tutulmaz.
+46|Hata mesajını uyarı simgesiyle birlikte Label içinde sunar. Label, metin ve simgeyi anlamlı bir UI bileşeni olarak birleştirir.
+47|Hata yazısını küçük caption boyutunda ve kırmızı gösterir. Stil bu Label’a uygulanır; bütün ana paneli kırmızı yapmaz.
+49|Tüm görevlerden hesaplanan ilerleme kartını yerleştirir. Seçili liste veya arama sonucu bu kartın paydasını değiştirmez.
+50|Görev ekleme alanını yerleştirir. composer adı, taslak metnin girildiği arayüz parçasını temsil eder.
+51|Listeyi veya boş durum görünümünü ekler. Bu bölüm esnek yükseklik alarak pencerenin kalan alanını doldurur.
+52|Bekleyen görev sayısı ve klavye ipucunun bulunduğu footer bölümünü ekler.
+54|Ana panel içeriği çevresine 36 punto boşluk ekler. Bu değer, VStack’in çocukları arasındaki 26 punto spacing’den farklı bir sorumluluğa sahiptir.
+55|Üst yerleşimin sunduğu kullanılabilir alana yayılmayı ister. infinity, sonsuz piksel üretmek değildir; ebeveynin boyut önerisi içindeki esnekliği ifade eder.
+56|macOS’un metin arka planı rengini kullanır. nsColor köprüsü AppKit rengini SwiftUI Color’a çevirir; sistem rengi açık ve koyu görünümle uyumludur.
+58|Alt kontrollerin vurgu rengini belirler. tint, özellikle düğme gibi buna uyan kontrollerin görünümüne yayılır; her foregroundStyle seçimini zorla değiştirmez.
+59|Arayüzün okunabilir kalması için minimum 800 × 580 punto boyut ister. Bu sabit boyut değildir; pencere daha büyük olabilir.
+60|editingItem binding’i nil değilken düzenleme sheet’i açılır. $ işareti okuma-yazma bağlantısını verir; closure içindeki item düzenlenecek görevdir. Identifiable uyumu sheet’in öğeyi tanımasını sağlar.
+61|Düzenleme formunu soldan hizalı ve dikey düzenler. Başlık, giriş ve eylemler arasına 20 punto koyar.
+62|Form başlığını title2 boyutunda kalın gösterir; görsel hiyerarşide giriş alanından ayrılır.
+63|TextField, editedTitle state’ine iki yönlü bağlanır. Kullanıcı yazınca state değişir; state değişince alan yeni değeri gösterir.
+64|Yerel yuvarlatılmış kenarlıklı metin alanı stilini seçer. Form alanının düzenlenebilir olduğunu görsel olarak belirginleştirir.
+65|Metin alanından submit geldiğinde saveEdit çağrılır. Return ile kaydetme, düğme eylemiyle aynı iş mantığını paylaşır.
+66|Vazgeç ve Kaydet düğmelerini yatay yerleştirir. Eylemler tek satırda okunur ve formun altında birlikte durur.
+67|Kullanılabilir yatay boşluğu alıp sonraki düğmeleri sağ tarafa iter. Spacer’ın etkisi bulunduğu HStack’in ana eksenindedir.
+68|editingItem’ı nil yaparak sheet’i kapatır. Taslak ayrı tutulduğu için depodaki başlık değişmez; cancelAction macOS’ta standart iptal kısayoluna bağlanır.
+69|Kaydet düğmesi, aynı saveEdit fonksiyonunu çağırır. Görev item ile, yeni başlık editedTitle ile belirlenir.
+70|Birincil eylemi dolgulu belirgin düğme stilinde sunar. Üst görünümden gelen tint rengi burada kullanılabilir.
+71|Yalnızca boşluklardan oluşan başlık için Kaydet’i devre dışı bırakır. UI doğrulamasıdır; TaskStore.rename içinde de ayrı koruma vardır.
+72|Düğmeyi standart varsayılan eylem kısayoluna bağlar. Metin alanının onSubmit davranışı da aynı kaydetme fonksiyonuna yönlenir.
+75|Sheet içeriğinin çevresine 28 punto boşluk ekler.
+76|Düzenleme içeriğine 400 punto genişlik verir. Ana pencerenin boyutundan bağımsız, kısa bir başlık formu için kontrollü ölçü kullanılır.
+80|Kenar çubuğunu ayrı hesaplanan görünüm olarak tanımlar. private bu uygulama ayrıntısını ContentView dışında kullanıma kapatır.
+81|Marka, filtreler, motivasyon kartı ve gizlilik satırını dikey dizer. leading, çocukların başlangıç kenarını hizalar.
+82|Marka simgesi ile iki satırlık marka yazısını yatay yerleştirir. 12 punto aralık iki farklı görsel öğeyi birbirinden ayırır.
+83|SF Symbols içindeki checkmark simgesini oluşturur. Harici bir resim dosyası gerektirmez.
+84|Sistem simgesinin 20 punto ve kalın ağırlıkla çizilmesini ister. SF Symbols, font ayarlarına uyum sağlar.
+85|İşareti beyaz boyar; mor arka planda yeterli görsel ayrışma hedeflenir.
+86|Simgeye 40 × 40 punto yer ayırır. Sonraki background bu frame’in çevresinde çizildiği için küçük simgenin arkasında geniş bir kutu oluşur.
+87|Vurgu renginin geçişini 13 punto köşe yarıçaplı kutuda çizer. background içerik arkasındadır; simgenin kendisini büyütmez.
+88|Marka adını ve sloganı alt alta, 2 punto aralıkla yerleştirir.
+89|odak adını 24 punto, kalın ve yuvarlatılmış font tasarımıyla gösterir. Bu tipografik seçim marka alanını diğer metinlerden ayırır.
+90|Sloganı daha küçük ve ikincil renkte gösterir; marka adıyla yarışmayan bir bilgi seviyesi oluşturur.
+93|Filtre başlığı ile seçenekleri dikey gruplar. Bu iç VStack’in spacing değeri dış kenar çubuğundan farklıdır.
+94|Filtre grubunun sabit başlığını gösterir. Bu satır etkileşimli bir kontrol değildir.
+95|Küçük, yarı kalın yazı ve 1,6 punto harf aralığı kullanır. tracking metnin harfleri arasındaki uzaklığı değiştirir.
+96|Başlığı ikincil renkte gösterip yatayda 12, altta 6 punto boşluk ekler. Başlığın seçenek satırlarıyla görsel hizasını düzenler.
+97|CaseIterable’dan gelen bütün filtreler için görünüm üretir. Identifiable sayesinde her seçenek kalıcı bir kimlikle izlenir; üç düğme elle tekrarlanmaz.
+98|Her filtre için eylem ve label closure’ları ayrı olan bir Button başlatır. Böylece satırın tamamı düğme etiketi olarak tasarlanabilir.
+99|Seçili filtreyi 0,18 saniyelik easeInOut animasyon işlemi içinde değiştirir. Veriyi geciktirmez; bu işlemden doğan animasyon uygulanabilir görsel değişiklikleri yumuşatır.
+100|Düğmenin görünür içeriğini tanımlayan label closure’ına geçer. Önceki closure eylem, bu closure arayüz üretir.
+101|Simge, filtre metni, esnek boşluk ve sayacı yatay dizer. Bu bir menü satırı için HStack kullanımının tipik örneğidir.
+102|Filtrenin simgesini 18 punto genişlikte bir alana yerleştirir. Farklı simgelerin metin başlangıcını kaydırmasını azaltır.
+103|Türkçe rawValue başlığını gösterir. Seçili satırı semibold, diğerlerini regular yaparak aktif durumu vurgular.
+104|Başlık ile sayacı ayırıp sayacı satırın sonuna iter. Metnin uzunluğu değişse de sağ kenar düzenli kalır.
+105|İlgili filtreye uyan tüm görevlerin sayısını string interpolation ile gösterir. $0 incelenen görevdir; arama metni burada kullanılmadığı için sayaç arama sonuç sayısı değildir.
+106|Caption boyutu ve eşit genişlikli rakamlar kullanır. Sayaç 1’den 8’e geçerken rakam genişliklerinin değişmesi azaltılır.
+107|Sayacı ikincil renkte sunar; filtre başlığı daha baskın kalır.
+109|Filtre satırının içeriği çevresine 12 punto ekler. Hem nefes alanı hem daha geniş bir etkileşim bölgesi oluşur.
+110|Seçili filtreyi mor, diğerlerini sistemin birincil rengiyle çizer. Üçlü koşul operatörü condition ? a : b iki stil arasından seçim yapar.
+111|Seçili satırın arkasına yüzde 11 opaklıkta mor kutu, diğerlerine saydam arka plan koyar. Yuvarlatılmış köşeler seçimi bir bütün satır olarak gösterir.
+112|Hit-test şeklini dikdörtgen yapar. Etiketin boş bölgeleri dahil satırın tıklanabilir alanını belirgin bir şekle bağlar.
+114|Platformun standart düğme süslemesini kaldırır. Satırın seçili arka planı ve yazı stili zaten elle tasarlandığından çift görsel çerçeve oluşmaz.
+117|Dikey esnek boşluk bırakır; alt kart ve gizlilik bilgisini kenar çubuğunun altına iter. Bu kez Spacer, VStack içinde olduğu için dikey çalışır.
+118|Motivasyon kartının simge ve metinlerini dikey gruplar.
+119|Yaprak simgesini title3 ölçeğinde ve vurgu renginde gösterir. Dekoratif kartın görsel başlangıcıdır.
+120|\n kaçış dizisiyle metinde bilinçli satır kırılması yapar. Bu iki ayrı Text değil tek metin görünümüdür.
+121|15 punto medium yazı ve satırlar arasında ek 4 punto mesafe uygular. lineSpacing, tracking’den farklı olarak satırlar arasını etkiler.
+122|Kartın ikinci kısa açıklamasını ekler.
+123|İkinci açıklamayı caption ve secondary ile daha düşük hiyerarşide gösterir.
+125|Motivasyon kartının iç kenarlarına 16 punto boşluk ekler.
+126|Kartı mevcut genişliğe yayar, içeriğini başlangıç tarafında tutar. leading, metnin kart içinde ortalanmasını engeller.
+127|Kartın arkasına çok hafif mor ve 14 punto yuvarlatılmış köşeler ekler. Dekoratif arka plan iş mantığını değiştirmez.
+128|Kilit-kalkan simgeli Label ile yerel saklama bilgisini kullanıcıya gösterir. Bu açıklama tek başına şifreleme veya erişim kontrolü uygulamaz.
+129|Gizlilik satırını küçük ve ikincil renkte çizer.
+131|Kenar çubuğunun çocuklarının çevresine 22 punto boşluk ekler.
+132|Kenar çubuğu için 226 punto genişlik ayırır. Sabit sidebar ve esnek ana panel birlikte masaüstü düzeni oluşturur.
+133|Kenar çubuğunu ebeveynin sunduğu yüksekliğe yayar; arka plan ve alt içerik tam panel boyunca yerleşir.
+134|Sistemin ince materyal arka planını kullanır. Görünüm temaya ve arkasındaki içeriğe uyum gösterebilir; bu sıradan sabit RGB rengi değildir.
+137|Ana başlık alanını ayrı bir görünüm olarak tanımlar. Tarih satırı ve filtre açıklaması birlikte yönetilir.
+138|Tarih satırıyla başlık grubunu 18 punto dikey aralıkla dizer.
+139|Tarih ve dekoratif güneş simgesini yatay yerleştirir.
+140|Date.now değerini gün, uzun ay ve haftanın günü ile Türkçe biçimler, sonra büyük harfe çevirir. Bu bir zamanlayıcı değildir; görünüm yeniden değerlendirilmedikçe gece yarısında kendiliğinden güncelleme garantisi yoktur.
+141|Tarihi 10 punto yarı kalın, harf aralıklı ve ikincil renkte gösterir. Başlığa göre daha sessiz bir üst bilgi satırıdır.
+142|Tarih ile simge arasındaki kalan genişliği doldurur; güneşi sağa iter.
+143|Sabit güneş simgesini vurgu rengiyle gösterir. Hava durumu verisi okumaz ve gündüz/gece hesabı yapmaz.
+145|Başlık grubunu yatay bir satıra alır ve çocukları alt kenarından hizalar. Burada ikinci öğe Spacer olduğu için esas etki grubu sola tutmaktır.
+146|Büyük başlık ile alt açıklamayı 7 punto aralıkla alt alta koyar.
+147|Seçili filtrenin Türkçe başlığını 32 punto kalın ve yuvarlatılmış fontla gösterir. filter değişimi otomatik olarak bu metne yansır.
+148|Enum’un subtitle özelliğini subheadline ve secondary ile gösterir. Metin seçimi görünüm içinde tekrar switch yazmadan yapılır.
+150|Minimumu sıfır olan esnek alan ekler. Alan daraldığında zorunlu ek bir boşluk dayatmadan başlık grubunu başlangıca hizalamaya yardımcı olur.
+155|İlerleme kartını hesaplanan bir görünüm olarak ayırır. Halka, açıklama ve yüzde tek sorumluluk altında okunur.
+156|Halka, metin grubu ve yüzdeyi yatay dizer; aralarına 18 punto koyar.
+157|ZStack şekilleri aynı alan üzerinde üst üste yerleştirir. Arka halka, ilerleme yayı ve onay simgesi aynı merkezde görünmelidir; HStack kullanmak onları yan yana dizerdi.
+158|Tam dairenin konturunu düşük opaklıkta çizer. Bu sabit arka halka, tamamlanmamış bölümü de görünür tutar.
+159|İkinci dairenin çizilecek kısmını 0 ile tamamlanan/toplam oranına sınırlar. Boş dizi için 0 seçilerek sıfıra bölme önlenir. CGFloat dönüşümü kesirli grafik hesabı içindir.
+160|İlerleme yayına 5 punto kontur ve yuvarlak uç uygular. Dolgu yerine stroke kullanıldığı için dairenin içi kapatılmaz.
+161|Yayı eksi 90 derece döndürerek başlangıcını yukarı taşır. Döndürme bu ikinci daireye uygulanır; tüm kartı döndürmez.
+162|Halkanın merkezine mor onay simgesini koyar. ZStack’in merkez hizası sayesinde ayrıca x/y koordinatı yazılmaz.
+163|Katmanlı halka grubunu kapatıp 48 × 48 punto alana sınırlar. Bu ölçü, yanındaki metinle dengeli bir kart düzeni sağlar.
+164|Kart başlığını ve açıklamasını alt alta, başlangıca hizalı dizer.
+165|Görev yokken başlangıç mesajı, görev varsa ilerleme mesajı seçer. Bu sadece sunum metni koşuludur.
+166|Kart başlığını 14 punto yarı kalın yapar.
+167|Boş listeye yönlendirme metni, dolu listeye toplam ve tamamlanan sayısını gösterir. Hesap tüm store.items üzerinden yapıldığı için arama veya seçili filtreden bağımsızdır.
+168|Açıklamayı caption ve secondary ile başlıktan ayırır.
+170|Yüzde metnini kartın sağ kenarına iter.
+171|Görev yoksa 0%, varsa tamsayı yüzdesi üretir. Int bölmesi ondalık kısmı atar; örneğin 1/3 için 33% görülür. Halka ise kesirli oranla çizilir.
+172|Yüzdeyi 24 punto yarı kalın ve vurgu renginde gösterir.
+174|Kartın içeriği çevresine 20 punto boşluk ekler; arka plan sonraki satırda bu alanı da kapsar.
+175|16 punto köşeli ve hafif mor arka plan çizer. Düşük opaklık sistemin açık/koyu zeminine uyum sağlar.
+178|Görev yazma alanını ayrı hesaplanan görünüm olarak tanımlar. Yerel newTitle durumu bu bölümün metin taslağıdır.
+179|Artı simgesi, metin alanı ve ekleme düğmesini aynı yatay satıra koyar.
+180|Artı daire simgesini title3 boyutunda ve vurgu renginde gösterir. Bu Image tek başına düğme değildir.
+181|Görev taslağını newTitle binding’ine bağlar. Placeholder yalnızca alan boşken yol gösterir; varsayılan görev metni olarak kaydedilmez.
+182|Sade alan stili seçer, odak durumunu composerFocused ile bağlar ve submit olayını addTask’a yönlendirir. Aynı satırda üç modifier vardır; farklı sorumluluklara sahiptirler.
+183|Erişilebilirlik teknolojilerine alanın adını Yeni görev olarak bildirir. Placeholder’ın görünümünden bağımsız açık bir kontrol adı sağlar.
+184|Düğmenin eylemine addTask fonksiyonunu verir. Parantezsiz fonksiyon adı burada çağrı değil, olay olduğunda çağrılacak fonksiyon değeridir.
+185|Ekleme düğmesinin etiketini yukarı ok olarak çizer ve 5 punto boşluk ekler. Simgeye semibold ağırlık uygular.
+187|Belirgin düğme stili seçer, ardından görünümü 8 punto köşeli şekle kırpar. clipShape, background gibi arka plana şekil eklemekten farklı olarak sınır dışını keser.
+188|Başlık yalnızca boşluklardan oluşuyorsa ekleme düğmesini kapatır. Klavyeden çağrı olabileceği için depodaki guard yine gereklidir.
+189|Simgeli düğmeye erişilebilir ad ve fare üstünde gösterilecek yardım metni ekler. Return desteği bir üst metin alanındaki onSubmit ile sağlanır.
+191|Görev giriş satırının çevresine 14 punto iç boşluk ekler.
+192|Odak varken mor, yokken düşük opaklıklı çerçeve çizer. strokeBorder çizgiyi şeklin içinde tutar; görünümün tamamını doldurmaz.
+193|Arka plana görünüm üreten ayrı bir closure ekler. Burada görsel dekor yerine kısayol alacak bir düğme yerleştirilmiştir.
+194|Çağrılınca composerFocused değerini true yapar; .focused binding’i bunu klavye odağına taşır.
+195|Düğmeye Command+N kısayolu atar ve görünür etiketini gizler. hidden görünümü görünmez yapar; bu yöntemle kısayol tanımlanmıştır. Uygulama büyürse Commands içinde merkezî komut tanımı daha açık olabilir.
+199|Görev başlığı, arama, boş durum ve kaydırılabilir satırları bir araya getiren bölümdür.
+200|Üst araç satırı ile liste alanını 14 punto dikey aralıkla ayırır.
+201|Liste başlığı ile aramayı aynı yatay satırda tutar.
+202|Görünür görev sayısını gösterir. Sidebar sayaçlarından farklı olarak visibleItems kullandığı için arama metni bu sayıyı etkiler.
+203|Liste bölüm başlığı için küçük, harf aralıklı ve ikincil bir stil uygular.
+204|Arama alanını sağ kenara iter ve başlıktan ayırır.
+205|Arama simgesi, alan ve koşullu temizleme düğmesini 6 punto yatay aralıkla dizer.
+206|Büyüteci ikincil renkte gösterir. Kullanıcıya alanın arama amaçlı olduğunu işaret eder.
+207|TextField’ı search state’ine bağlar. Kullanıcı yazdığında visibleItems yeniden hesaplanır; ayrı bir Ara düğmesi yoktur.
+208|Arama alanının erişilebilir adını açıkça tanımlar.
+209|Arama metni varsa temizleme düğmesini görünüm ağacına ekler. Boşken gereksiz bir kontrol gösterilmez.
+210|Düğme search değerini boşaltır; etiketi dolu daire içindeki çarpıdır. Sonraki yeniden değerlendirmede arama kısıtı kalkar.
+211|Düğmeyi sade gösterir ve ekran okuyucu için Aramayı temizle adını verir.
+213|Arama grubunu kapatır, ortak fontu caption yapar ve 160 punto genişlik verir. Dar pencerelerde uzun arama metni bu sabit alan içinde düzenlenir.
+215|Filtreleme ve aramadan sonra öğe kalıp kalmadığını denetler. Bu koşul, tüm depoda hiç görev olmamasıyla aynı şey değildir.
+216|Boş durumdaki simge ve açıklamaları dikey ve ortalı düzenler.
+217|Arama boşsa tepsi, doluysa büyüteç gösterir. Boş liste ile sonuçsuz aramayı farklı görsel durumlar olarak anlatır.
+218|Boş durum simgesini 32 punto hafif ağırlık ve yüzde 70 opak vurgu rengiyle çizer.
+219|Arama durumuna göre henüz görev yok veya görev bulunamadı metni seçer.
+220|Boş durum başlığını headline boyutunda sunar.
+221|Kullanıcıya bir sonraki olası eylemi anlatır: görev eklemek/liste değiştirmek veya farklı kelime denemek.
+222|Yardım metnini daha küçük ve ikincil renkte tutar.
+223|Boş durum grubunu kullanılabilir alana yayar. Frame varsayılan merkez hizasıyla içeriğin liste alanında ortalanmasını sağlar.
+224|Boş olmayan sonuçlar için alternatif görünüm dalını açar. SwiftUI ViewBuilder bu koşullu görünümü oluşturur.
+225|Varsayılan dikey ScrollView, çok sayıdaki görevin pencere dışına taşmak yerine kaydırılmasını sağlar. Tek başına tembel satır oluşturma sağlamaz.
+226|LazyVStack satırları ihtiyaç oldukça üretir. ScrollView ile birlikte uzun listeler için uygundur; bu, TaskStore verisinin diskten parça parça yüklendiği anlamına gelmez.
+227|Her görünür görevi id kimliğiyle dolaşıp taskRow(item) üretir. Veri modelinin Identifiable uyumu burada doğrudan kullanılır.
+228|LazyVStack’i kapatıp üst ve alta 2 punto boşluk ekler; satırlar arasındaki 8 punto spacing ayrı kalır.
+231|Liste bölümünü kapatıp kalan yüksekliği almasına izin verir. Başlık, kart ve girişten sonra ana esnek alan burasıdır.
+234|Bir TodoItem için satır üreten yardımcı fonksiyondur. _ etiketsiz çağrıya izin verir; some View somut UI tipini dışarıya açmadan döndürür.
+235|Tamamlama düğmesi, başlık, yıldız ve menüyü yatay olarak dizer. 13 punto aralık kontrolleri ayırır; başlık esnek genişliği alır.
+236|Tamamlama düğmesi depodaki durumu animasyon işlemi içinde tersine çevirir. Dosya yazması yine senkrondur; withAnimation bir arka plan görevi başlatmaz.
+237|Tamamlanan görevde dolu onaylı daire, diğerinde boş daire kullanır. Görsel durum doğrudan veri alanından türetilir.
+238|Tamamlama simgesine 22 punto ve light ağırlık uygular.
+239|Tamamlanan simgeyi vurgu rengine, diğerini silik ikincil renge boyar.
+240|Tamamlama düğmesinin etiketini kapatır ve platform düğme çerçevesini kaldırır.
+241|Erişilebilir ad, mevcut durumu değil basılınca yapılacak eylemi anlatır: yeniden aç veya tamamla.
+242|Görev başlığını 14 punto gösterir. Bu Text, düzenleme alanı değildir; düzenleme menüden sheet ile yapılır.
+243|Görev tamamlanmışsa metnin üstünü çizer. Bool doğrudan stil koşulu olarak kullanılır.
+244|Tamamlanan başlığı ikincil renge düşürür, diğerini birincil renkte bırakır. Üst çizgiyle birlikte iki görsel ipucu sağlar.
+245|Başlığın satırdaki boş genişliği almasını ve başlangıca hizalanmasını ister. Böylece yıldız ve menü sağda kalır; burada ayrıca Spacer gerekmez.
+246|Başlık metninin kullanıcı tarafından seçilip kopyalanabilmesini etkinleştirir.
+247|Yıldız düğmesi önemli işaretini depoda değiştirir. Burada withAnimation kullanılmamıştır.
+248|Önemli görev için dolu yıldız, diğerleri için kontur yıldız gösterir.
+249|Önemli yıldızı turuncu, diğerini silik ikincil renkte çizer. Durum, yalnızca simgenin doluluğuyla sınırlı kalmaz.
+250|Yıldız düğmesini sade yapar ve duruma göre anlamlı eylem adı verir. Bu tek satır hem closure kapanışı hem iki modifier içerir.
+251|Göreve ait ikincil eylemleri açılır Menu içinde toplar. Her satırda ayrı Düzenle ve Sil düğmeleri göstermeyerek yer tasarrufu sağlar.
+252|Önce düzenleme taslağına başlığı kopyalar, sonra editingItem atayarak sheet’i açar. Noktalı virgül aynı satırdaki iki ifadeyi ayırır; sıralama formun doğru metinle açılmasını sağlar.
+253|Silme düğmesine destructive rolü verir ve depodan siler. Rol görsel/anlamsal ipucudur; otomatik onay penceresi veya geri alma davranışı eklemez.
+254|Menünün görünür etiketini üç nokta simgesi olarak tanımlar. Önceki closure menü seçenekleri, bu closure tetikleyici görünümüdür.
+255|Kenarlıksız menü stili seçer, varsayılan göstergeyi gizler ve ideal boyutu korur. Amaç üç noktanın yanında ikinci bir açılır menü oku görünmemesidir.
+256|Simgeli menünün erişilebilir adını Görev seçenekleri yapar.
+258|Görev satırının çevresine 16 punto ekler. Satır arka planı bu iç boşluğu da kapsayacaktır.
+259|Tamamlanan görevlerde daha silik bir arka plan seçer ve 12 punto köşeler kullanır. Color.primary temaya göre değiştiği için arka plan açık/koyu görünümle uyum sağlar.
+262|Alt bilgi satırını hesaplanan görünüm olarak tanımlar. Görev sayısı ve kısayol ipucu burada toplanır.
+263|Durum noktası, bekleyen görev metni ve kısayolu yatay dizer.
+264|5 × 5 punto yeşil bir daire çizer. Bu dekoratif nokta gerçek zamanlı disk/bağlantı sağlık kontrolüne bağlı değildir.
+265|Toplamdan tamamlananları çıkararak bekleyen görev sayısını gösterir. Seçili filtre ve arama burada da hesaba katılmaz.
+266|Kısayol ipucunu alt satırın sağ kenarına taşır.
+267|Yeni görev için Command+N ipucunu gösterir. Bu Text tek başına kısayol oluşturmaz; gerçek tanım composer içindeki düğmededir.
+268|Alt satırı kapatır; çocuklara ortak 10 punto font ve ikincil renk uygular. Çocukta açıkça verilmiş yeşil renk gibi stiller kendi görünümünde geçerlidir.
+271|Bir görevin belirtilen filtreye uyup uymadığını döndüren yardımcı fonksiyondur. Sidebar sayaçları ile görünür listenin aynı kuralı paylaşmasını sağlar.
+272|Filtre enum’una göre Bool sonucu üretir; tüm seçenekler açıkça ele alınır.
+273|Tüm görevler filtresi her öğeyi kabul eder; tamamlanmış görevler de buna dahildir.
+274|Önemli filtresi hem yıldızlı hem tamamlanmamış öğeleri alır. Yıldızlı görev tamamlanınca işareti silinmez, yalnızca bu listeden çıkar.
+275|Tamamlananlar filtresi yalnızca isCompleted true olanları kabul eder.
+279|Arayüzün ekleme akışını tanımlar. TaskStore veriyi doğrulayıp kaydederken bu fonksiyon taslak, arama ve odak gibi UI durumunu yönetir.
+280|Başlığı depoya gönderir. Seçili filtre important ise yeni görev de önemli oluşturulur; diğer filtrelerde false gider.
+281|Depolama hatası varsa taslağı temizlemeden çıkar. Kullanıcının yazdığı metnin kaybolmamasını sağlar. add metodunun sessizce reddettiği boş başlık için ayrı bir başarı sonucu yoktur.
+282|Hata yoksa yeni görev taslağını boşaltır. Ekleme sonrası kullanıcı yeni bir başlık yazabilir.
+283|Tamamlananlar ekranından görev eklendiyse all’a geçer. Yeni görev tamamlanmamış olduğundan aksi hâlde mevcut filtrede görünmezdi.
+284|Aramayı temizler. Yeni başlığın önceki arama ifadesine uymadığı için gizlenmesini önler.
+285|Klavye odağını tekrar giriş alanına verir. Art arda görev ekleme akışını hızlandırır.
+288|Düzenleme formunun kaydetme eylemidir. Depo işlemi ile sheet kapatma davranışını birleştirir.
+289|Seçili görevi editedTitle taslağıyla yeniden adlandırır. Boşluk temizleme ve dosya kaydı TaskStore’da yapılır.
+290|Depolama hatası yoksa editingItem’ı nil yaparak sheet’i kapatır. rename bir başarı Bool’u döndürmediğinden boş başlığın reddedilmesi gibi sessiz durumlar burada ayırt edilmez.
+294|Xcode Canvas için bir önizleme tanımlar. Bu uygulamanın @main giriş noktası değildir; tasarım sırasında ContentView’i ayrı bağlamda görmeyi sağlar.
+295|Önizleme için ContentView örneği oluşturur. Aşağıdaki environmentObject bağımlılığı yine gereklidir.
+296|Önizlemeye geçici dizinde dosya kullanan TaskStore verir. Gerçek görev dosyasını ayırır; ancak ad sabit olduğu için önizleme oturumları aynı geçici dosyayı paylaşabilir, otomatik temiz başlangıç garantisi yoktur.
+297|Önizlemede Türkçe locale seçer; çalışan uygulamadaki environment ayarıyla aynı niyeti taşır.
+@@ ios_testTests/ios_testTests.swift
+1|Foundation; URL, UUID, Data ve FileManager gibi dosya/test yardımcılarını sağlar.
+2|Swift Testing çatısını içe aktarır. @Test, #expect ve #require bu modülden gelir; bu dosya XCTestCase kullanmaz.
+3|Uygulama modülünü test edilebilir erişimle içe aktarır. Test derlemesinde internal bildirimlere erişilebilir; private alanları sınırsızca açmaz.
+5|Testleri MainActor bağlamına yerleştirir. TaskStore da bu aktöre izole edildiği için çağrılar aynı bağlamda yapılır.
+6|Bir Swift Testing test grubudur. XCTestCase kalıtımı gerekmez; @Test ile işaretlenmiş fonksiyonlar keşfedilir.
+7|Görevlerin yeniden yüklenmesini sınayan testtir. throws, dosya hatalarının veya #require başarısızlığının testi başarısız bitirebilmesini sağlar.
+8|Her test çalıştırmasına benzersiz geçici dizin ayırır. UUID, paralel ya da tekrar eden testlerin aynı dosyaya çarpışmasını azaltır.
+9|defer, fonksiyondan çıkılırken temizliği çalıştırır; test erken hata verse de kapsamdan çıkışta işler. try? temizlik hatasını bilerek yok sayar.
+10|Geçici dizine tasks.json dosya adını ekler. Bu işlem henüz dosya oluşturmaz.
+11|Bağımlılık enjeksiyonuyla test deposunu gerçek kullanıcı dosyasından ayırır.
+12|Sadece boşluk içeren başlık eklemeyi dener; doğrulamanın UI’dan bağımsız çalışmasını sınar.
+13|Boş başlığın listeye eklenmediğini doğrular. #expect başarısızsa bulguyu kaydeder; testi mutlaka hemen durdurmak zorunda değildir.
+14|Çevresinde boşluk olan önemli görev ekler. Tek işlemle başlık temizliği ve önemli alanın başlangıç değeri için veri hazırlanır.
+15|İlk öğenin varlığını zorunlu kılar ve optional’dan çıkarır. #require başarısızsa devam eden adımlar anlamsız olacağı için test throws yoluyla durur.
+16|Başlığın dış boşluklarının temizlendiğini doğrular.
+17|Görevi tamamlanmış duruma geçirir. Ardından yeni store ile bu değişikliğin kalıcılığı kontrol edilecektir.
+18|Aynı görevin başlığını değiştirir. item eski bir değer kopyasıdır; depo id ile bulduğu için işlem çalışır.
+19|Aynı dosyayı okuyan yeni TaskStore yaratır. Bu gerçek uygulama sürecini yeniden başlatmaz; yeniden yükleme davranışını model düzeyinde simüle eder.
+20|Yeniden yüklenen başlığın değişmiş olduğunu doğrular. ?. optional chaining, öğe yoksa nil üreterek karşılaştırmanın başarısız olmasını sağlar.
+21|Tamamlanma durumunun diskte korunduğunu sınar.
+22|Önemli işaretinin diskte korunduğunu sınar. toggleImportance davranışı bu testte ayrıca çalıştırılmamıştır.
+23|Yeniden yüklenen depodan görevi siler. Eski item’ın kimliği korunmuş olduğu için doğru kayıt bulunur.
+24|Bir kez daha dosyayı okuyup silmenin kalıcı olduğunu doğrular. Sadece bellekte boşalma kontrolüyle yetinilmez.
+27|Bozuk dosyanın üzerine yazılmamasını sınayan ikinci testtir. Bu veri koruma davranışı, hata mesajının yalnızca görünmesinden daha önemlidir.
+28|Benzersiz geçici dosya URL’si oluşturur. Uzantı olmaması sorun değildir; JSON çözümleyici dosya uzantısına değil içeriğine bakar.
+29|Test sonunda bozuk örnek dosyayı kaldırır; temizlik hatasını test sonucuna katmaz.
+30|Geçerli JSON olmayan UTF-8 baytları oluşturur. Data, string yerine dosyaya yazılacak ham baytları temsil eder.
+31|Bozuk içeriği dosyaya yazar. try, hazırlık başarısızsa testin devam etmesini önler.
+32|Depo dosyayı okumayı ve çözmeyi dener; beklenen sonuç storageError oluşmasıdır.
+33|Okuma/çözümleme hatasının kaydedildiğini doğrular. Mesaj metninin tam içeriğine bağımlı kalmaz.
+34|Hatalı depo durumunda yeni görev eklemeyi dener. update’in koruma guard’ı bu değişikliği engellemelidir.
+35|Dosya baytlarını tekrar okuyup orijinal bozuk veriyle karşılaştırır. Dosyanın gerçekten korunmasını sınar; sadece items boş kaldı demek yeterli olmazdı.
+@@ ios_testUITests/ios_testUITests.swift
+8|XCTest, UI otomasyonu ve performans ölçümü API’lerini sağlar. Model testlerindeki Swift Testing’den ayrı bir test çatısıdır.
+10|XCTestCase’ten türeyen UI test sınıfıdır. final, alt sınıf oluşturulmasını engeller; test ile başlayan uygun metotlar XCTest tarafından keşfedilir.
+12|Her testten önce çalışacak hazırlık metodunu override eder. throws, hazırlık sırasında hata oluşabileceğini ifade eder.
+16|Bir UI doğrulaması başarısız olursa testin devam etmemesini ister. Yanlış ekran durumunda sonraki adımların anlamsız hatalar üretmesini azaltır.
+21|Her testten sonra çalışacak temizlik kancasını tanımlar. Şu an gövdede yalnızca şablon yorumu vardır; gerçek temizleme işlemi yapılmaz.
+25|UI test metodunu ana aktöre izole eder; UI otomasyon API’lerinin beklediği bağlama uyum sağlar.
+26|Temel açılış testi iskeletidir. throws hata aktarımına izin verir; içinde işlevsel doğrulama assertion’ı bulunmaz.
+28|Test hedefindeki uygulamayı temsil eden XCUIApplication otomasyon nesnesini oluşturur. Bu, SwiftUI App nesnesinin kendisi değildir.
+29|Uygulamayı test otomasyonu üzerinden başlatır. Görev ekleme veya filtre doğrulaması yapılmaz; açılışın kendisi denenir.
+34|Performans testini MainActor bağlamına taşır.
+35|Uygulama açılış süresini ölçen test metodudur. İşlevsel doğruluk ile performans farklı test amaçlarıdır.
+36|Ölçüm API’sinin işletim sistemi uygunluğunu denetler. Şablondaki iOS/tvOS/watchOS listesi uygulamanın bu platformları desteklediğini göstermez; proje hedefi macOS’tur.
+38|XCTApplicationLaunchMetric ile uygulama açılış metriğini toplar. measure bloğu ölçüm düzenine göre birden fazla kez yürütülebilir.
+39|Her ölçüm yürütmesinde uygulamayı başlatır. Bu satır herhangi bir görev sonucunu assert etmez.
+@@ ios_testUITests/ios_testUITestsLaunchTests.swift
+8|Açılış otomasyonu ve ekran görüntüsü eki için XCTest’i içe aktarır.
+10|Açılış senaryolarını içeren ayrı XCTestCase sınıfını tanımlar. Test gruplarını amaçlarına göre ayırır.
+12|Testi hedefin UI yapılandırmaları için çalıştırma politikasını override eder. class var, örnek yerine sınıf düzeyinde ayardır.
+13|Politikayı etkinleştirir. Gerçekte hangi yapılandırmaların kullanılacağı test koşumunun yapılandırmasına bağlıdır; burada tek tek tema listelenmez.
+16|Her test öncesi hazırlık kancasını açar.
+17|İlk başarısızlıktan sonra UI testinin sürmesini engeller.
+20|Açılış testini ana aktöre yerleştirir.
+21|Uygulamayı başlatıp görüntü ekleyen test metodudur. Ekrandaki görevlerin doğruluğunu sınayan bir assertion içermez.
+22|Test edilen uygulama için otomasyon temsilcisi oluşturur.
+23|Uygulamayı başlatır. Sonraki screenshot çağrısı bu çalışan uygulamadan görüntü alacaktır.
+28|Uygulama ekran görüntüsünü XCTest eki haline getirir. README’deki örnek görselleri üretmek için kullanılan geçici render yöntemiyle aynı akış değildir.
+29|Test raporunda ekin okunabilir adını Launch Screen yapar.
+30|Test başarılı olsa da ekin korunmasını ister. Varsayılan yalnızca hata odaklı saklama davranışına güvenilmez.
+31|Eki mevcut test sonucuna ekler. Dosyayı doğrudan docs/screenshots klasörüne yazmaz; Xcode sonuç paketinde görünür.
